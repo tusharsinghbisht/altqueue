@@ -1,0 +1,12 @@
+.tools/
+/bin/
+/data/
+/backups/
+.env
+.env.*
+!.env.example
+*.exe
+*.test
+*.out
+*.prof
+*.key

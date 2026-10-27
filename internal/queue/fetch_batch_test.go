@@ -282,6 +282,8 @@ func TestFetchBatchUsesSingleClockReading(t *testing.T) {
 	if _, err := engine.PublishBatch("emails", [][]byte{[]byte("one"), []byte("two")}); err != nil {
 		t.Fatal(err)
 	}
+	// Publication now timestamps jobs; count only reads performed by FetchBatch.
+	clockCalls = 0
 
 	deliveries, err := engine.FetchBatch("emails", 2, time.Minute)
 	if err != nil {

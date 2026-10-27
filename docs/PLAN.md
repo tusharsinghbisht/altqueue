@@ -1,8 +1,20 @@
 # AltQueue Project Plan
 
-**Status:** proposed implementation plan; no broker code exists yet.
+**Status:** a runnable single-node durable MVP is implemented. This document retains the original release roadmap; not every acceptance criterion is complete. See [implementation status](IMPLEMENTATION.md) for current behavior and limitations.
 
-**Related documents:** [README](../README.md) · [Architecture](ARCHITECTURE.md)
+**Related documents:** [README](../README.md) · [Architecture](ARCHITECTURE.md) · [Running](RUNNING.md)
+
+### Current milestone summary
+
+| Milestone | Current status |
+| --- | --- |
+| M0 | Module, contract, fake clocks and CI configuration exist; remote CI still needs validation |
+| M1 | Engine, batch operations, long polling and gRPC implemented |
+| M2 | Synchronized Pebble commits, recovery, checkpoints and abrupt-exit tests implemented; cross-request group commit and disk-only backlogs remain |
+| M3 | Delays, bounded deadline scheduling, retries, dead-letter inspection and replay implemented |
+| M4 | Admission controls and local benchmark exist; profiling, durable network benchmarks and soak testing remain |
+| M5 | Go SDK, renewing workers, CLI, examples and run documentation implemented |
+| M6 | TLS/token auth, metrics, shutdown and checkpoint restore implemented; WSL2 Docker build/runtime smoke verified; disk-headroom handling, security review, migration/release policy and broader deployment validation remain |
 
 ## 1. Product goal
 
@@ -288,4 +300,4 @@ Until an automatic dead-letter retention policy is explicitly specified, dead-le
 
 ## 10. Immediate next step
 
-Implement M0 and M1: establish the module and tests, then prove the in-memory publish → fetch → acknowledge lifecycle with deterministic lease expiry. Do not start with clustering, a custom WAL, or a dashboard.
+Run the durable broker on representative hardware, record local and network baselines, and prioritize bounded-working-set storage and cross-request group commit from measured bottlenecks. Complete the production-readiness gaps listed in [implementation status](IMPLEMENTATION.md) before declaring the original first release complete. Clustering, a custom WAL and a dashboard remain out of scope.

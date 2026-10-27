@@ -1,0 +1,64 @@
+syntax = "proto3";
+package altqueue.v1;
+option go_package = "github.com/tusharsinghbisht/altqueue/api/gen/altqueue/v1;queuev1";
+
+service QueueService {
+  rpc CreateQueue(CreateQueueRequest) returns (QueueInfo);
+  rpc GetQueue(QueueRequest) returns (QueueInfo);
+  rpc ListQueues(ListQueuesRequest) returns (ListQueuesResponse);
+  rpc DeleteQueue(QueueRequest) returns (Empty);
+  rpc Publish(PublishRequest) returns (PublishResponse);
+  rpc Fetch(FetchRequest) returns (FetchResponse);
+  rpc Ack(AckRequest) returns (Empty);
+  rpc AckBatch(AckBatchRequest) returns (AckBatchResponse);
+  rpc Nack(NackRequest) returns (Empty);
+  rpc ExtendLease(ExtendLeaseRequest) returns (ExtendLeaseResponse);
+  rpc ListDeadJobs(ListDeadRequest) returns (ListDeadResponse);
+  rpc RequeueDeadJob(RequeueDeadRequest) returns (Empty);
+}
+message Empty {}
+message QueueConfig {
+  int32 max_jobs = 1;
+  int64 max_payload_bytes = 2;
+  int32 max_in_flight = 3;
+  int32 max_attempts = 4;
+  int64 retry_base_ms = 5;
+  int64 retry_max_ms = 6;
+}
+message QueueRequest { string queue = 1; }
+message CreateQueueRequest { string queue = 1; QueueConfig config = 2; }
+message QueueInfo {
+  string name = 1;
+  QueueConfig config = 2;
+  int64 jobs = 3;
+  int64 ready = 4;
+  int64 delayed = 5;
+  int64 in_flight = 6;
+  int64 dead = 7;
+  int64 payload_bytes = 8;
+}
+message ListQueuesRequest { string after = 1; int32 limit = 2; }
+message ListQueuesResponse { repeated QueueInfo queues = 1; string next_after = 2; }
+message PublishRequest { string queue = 1; repeated bytes payloads = 2; int64 delay_ms = 3; }
+message PublishResponse { repeated string job_ids = 1; }
+message FetchRequest { string queue = 1; int32 limit = 2; int64 lease_ms = 3; int64 wait_ms = 4; }
+message Delivery {
+  string job_id = 1;
+  bytes payload = 2;
+  int32 attempt = 3;
+  string lease_token = 4;
+  int64 lease_deadline_unix_ms = 5;
+}
+message FetchResponse { repeated Delivery deliveries = 1; }
+message Receipt { string job_id = 1; string lease_token = 2; }
+message AckRequest { string queue = 1; Receipt receipt = 2; }
+message AckBatchRequest { string queue = 1; repeated Receipt receipts = 2; }
+message AckResult { string job_id = 1; string error_code = 2; }
+message AckBatchResponse { repeated AckResult results = 1; }
+message NackRequest { string queue = 1; Receipt receipt = 2; bool permanent = 3; string reason = 4; }
+message ExtendLeaseRequest { string queue = 1; Receipt receipt = 2; int64 duration_ms = 3; }
+message ExtendLeaseResponse { int64 lease_deadline_unix_ms = 1; }
+message ListDeadRequest { string queue = 1; string after = 2; int32 limit = 3; }
+message DeadJob { string job_id = 1; bytes payload = 2; int32 attempts = 3; string last_error = 4; int64 created_unix_ms = 5; }
+message ListDeadResponse { repeated DeadJob jobs = 1; string next_after = 2; }
+message RequeueDeadRequest { string queue = 1; string job_id = 2; }

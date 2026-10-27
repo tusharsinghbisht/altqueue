@@ -1,8 +1,12 @@
 # AltQueue Architecture
 
-**Status:** proposed first-release design. Components, protocols, and guarantees described here are not implemented yet.
+**Status:** original first-release architecture target, with a runnable durable MVP now implemented. The sections below describe the target design, not a claim that every optimization or release criterion has shipped.
 
-**Related documents:** [README](../README.md) · [Project plan](PLAN.md)
+**Related documents:** [README](../README.md) · [Project plan](PLAN.md) · [Implementation status](IMPLEMENTATION.md) · [API](API.md)
+
+### Current implementation differences
+
+The current engine uses one mutex to serialize state transitions and synchronized Pebble batches per request. Job metadata records include state, sequence, retry policy and lease fields; immutable payloads are stored separately. Runtime indexes and deadline heaps are reconstructed from those records. Payloads remain resident in bounded memory. Separate durable ready/lease index keyspaces, disk-only backlogs and cross-request group commit described as targets below are not implemented. The [implementation status](IMPLEMENTATION.md) document is authoritative about shipped behavior and remaining gaps.
 
 ## 1. Scope and assumptions
 
