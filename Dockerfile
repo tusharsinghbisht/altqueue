@@ -6,7 +6,7 @@ COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -o /altqueued ./cmd/altqueued
 RUN CGO_ENABLED=0 go build -trimpath -o /altqueue ./cmd/altqueue
 
-FROM alpine:3.22
+FROM alpine:3.24
 RUN apk add --no-cache ca-certificates && addgroup -S altqueue && adduser -S -G altqueue altqueue \
     && mkdir -p /var/lib/altqueue && chown altqueue:altqueue /var/lib/altqueue
 COPY --from=build /altqueued /usr/local/bin/altqueued
