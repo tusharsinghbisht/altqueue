@@ -58,7 +58,7 @@ Temporary smoke containers and their volume were removed. This validates the loc
 4. More recovery invariant validation, fuzzing, and fault injection around ambiguous commit outcomes.
 5. Authentication lifecycle/rotation, deployment-specific authorization, and security review.
 6. Metrics for commit latency, scheduler lag, queue wait time and storage/compaction pressure.
-7. API compatibility and storage migration policy, release packaging and a selected project license.
+7. API compatibility and storage migration policy, release packaging. (MIT license selected.)
 8. CI execution on remote runners and validation on deployment environments beyond the local WSL2 Docker smoke run.
 
 Clustering, replication, Kafka-style streams, publisher deduplication and exactly-once execution are outside this MVP, not features silently implied by it.

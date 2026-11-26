@@ -1,5 +1,9 @@
 # AltQueue
 
+[![CI](https://github.com/tusharsinghbisht/altqueue/actions/workflows/ci.yml/badge.svg)](https://github.com/tusharsinghbisht/altqueue/actions/workflows/ci.yml)
+[![Go](https://img.shields.io/badge/go-1.26-00ADD8?logo=go&logoColor=white)](go.mod)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A single-node durable task queue written in Go, with gRPC, a Go SDK, and a CLI.
 
 **Status: runnable MVP, not a production-hardened RabbitMQ/Kafka replacement.** The broker implements persistent jobs, competing workers, leases, retries, delayed jobs, dead-lettering, limits, and restart recovery. Performance targets have not been established or independently validated.
@@ -102,6 +106,17 @@ CLI flags go **before** positional arguments. JSON payload fields in CLI output 
 Local development can run without a token or TLS. Do not expose those defaults publicly. Remote listeners require **both TLS and `ALTQUEUE_TOKEN`**, unless an explicit unsafe development override is supplied. When configured, the token protects gRPC and metrics; health/readiness return only basic status.
 
 See [running and operations](docs/RUNNING.md) for authentication, TLS, backups, Docker, and shutdown.
+
+## Local benchmark
+
+Single-process engine lifecycle (publish, fetch, ack of a 1 KiB job; Apple M5, Go 1.27, no network):
+
+| Mode | Time per job lifecycle | Notes |
+| --- | --- | --- |
+| In-memory | ~1 µs | No persistence |
+| Durable (Pebble, fsync per transition) | ~11 ms | Three synchronized commits; no cross-request group commit yet |
+
+This is a local baseline, not a network throughput claim. Batch APIs amortize commits; group commit is the main planned optimization. Reproduce with `make bench`.
 
 ## Build and verify
 
