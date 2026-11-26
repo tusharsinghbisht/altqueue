@@ -1,8 +1,12 @@
 # AltQueue
 
+[![CI](https://github.com/tusharsinghbisht/altqueue/actions/workflows/ci.yml/badge.svg)](https://github.com/tusharsinghbisht/altqueue/actions/workflows/ci.yml)
+[![Go](https://img.shields.io/badge/go-1.26-00ADD8?logo=go&logoColor=white)](go.mod)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A single-node durable task queue written in Go, with gRPC, a Go SDK, and a CLI.
 
-**Status: runnable MVP, not a production-hardened RabbitMQ/Kafka replacement.** The broker implements persistent jobs, competing workers, leases, retries, delayed jobs, dead-lettering, limits, and restart recovery. Performance targets have not been established or independently validated.
+Status: working single-node broker, not production-hardened. It implements persistent jobs, competing workers, leases, retries, delayed jobs, dead-lettering, limits, and restart recovery. No throughput targets have been validated.
 
 ## Quick start
 
@@ -47,7 +51,7 @@ Default listeners are loopback-only:
 
 ## Delivery contract
 
-**At least once, not exactly once.** Workers must make external side effects idempotent. A lease token prevents an old worker from changing broker ownership, but cannot stop that worker from writing to an unrelated database or service.
+Delivery is at least once, not exactly once. Workers must make external side effects idempotent. A lease token prevents an old worker from changing broker ownership, but cannot stop that worker from writing to an unrelated database or service.
 
 - Successful publication means a synchronized local storage commit, not successful processing.
 - Fetch commits the lease before returning work.
@@ -58,7 +62,7 @@ Default listeners are loopback-only:
 
 ## Current limits and caveats
 
-The durable MVP keeps job payloads **in memory as well as on disk**. Queue limits apply to all unfinished states, including dead-letter jobs. It does not yet provide a disk-only backlog or cross-request group commit.
+The broker keeps job payloads in memory as well as on disk. Queue limits apply to all unfinished states, including dead-letter jobs. It does not yet provide a disk-only backlog or cross-request group commit.
 
 Defaults per queue:
 
@@ -71,7 +75,7 @@ Defaults per queue:
 | Retry base | 0: immediate retry |
 | Maximum retry backoff | 1 minute |
 
-Process-wide ceilings: 128 queues, 1,000,000 stored jobs, and 1 GiB of stored payload bytes. These are logical admission limits, **not an RSS guarantee**; Go objects, request copies, Pebble, and compaction also consume memory.
+Process-wide ceilings: 128 queues, 1,000,000 stored jobs, and 1 GiB of stored payload bytes. These are logical admission limits, not an RSS guarantee; Go objects, request copies, Pebble, and compaction also consume memory.
 
 Requests allow up to 120 jobs, 1 MiB per job, and 4 MiB of combined job payload. The scheduler handles bounded deadline batches every 100 ms. Network durations use milliseconds.
 
@@ -95,13 +99,24 @@ go run ./cmd/altqueue stats notifications
 go run ./cmd/altqueue dead notifications
 ```
 
-CLI flags go **before** positional arguments. JSON payload fields in CLI output are base64 encoded. Fetch output includes the job ID and token required by `ack`, `nack`, and `extend`.
+CLI flags go before positional arguments. JSON payload fields in CLI output are base64 encoded. Fetch output includes the job ID and token required by `ack`, `nack`, and `extend`.
 
 ## Security
 
-Local development can run without a token or TLS. Do not expose those defaults publicly. Remote listeners require **both TLS and `ALTQUEUE_TOKEN`**, unless an explicit unsafe development override is supplied. When configured, the token protects gRPC and metrics; health/readiness return only basic status.
+Local development can run without a token or TLS. Do not expose those defaults publicly. Remote listeners require both TLS and `ALTQUEUE_TOKEN`, unless an explicit unsafe development override is supplied. When configured, the token protects gRPC and metrics; health/readiness return only basic status.
 
 See [running and operations](docs/RUNNING.md) for authentication, TLS, backups, Docker, and shutdown.
+
+## Local benchmark
+
+Single-process engine lifecycle (publish, fetch, ack of a 1 KiB job; Apple M5, Go 1.27, no network):
+
+| Mode | Time per job lifecycle | Notes |
+| --- | --- | --- |
+| In-memory | ~1 µs | No persistence |
+| Durable (Pebble, fsync per transition) | ~11 ms | Three synchronized commits; no cross-request group commit yet |
+
+This is a local baseline, not a network throughput claim. Batch APIs amortize commits; group commit is the main planned optimization. Reproduce with `make bench`.
 
 ## Build and verify
 
@@ -113,7 +128,7 @@ go test -race ./...
 go test ./benchmarks -run '^$' -bench BenchmarkRoundTrip -benchmem
 ```
 
-Tests remain beside source where they need private state; the end-to-end broker test is under `tests/integration/`. New coverage focuses on durable lifecycle, failure recovery, and end-to-end behavior rather than repeating every permutation.
+Unit tests sit beside the source; the end-to-end broker test is in `tests/integration/`.
 
 ## Documentation
 
